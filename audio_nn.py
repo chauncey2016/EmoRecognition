@@ -49,7 +49,7 @@ class CSVDataset(Dataset):
             labels = df_l.values[:, 1]
         else:
             df_l = read_csv(label_path, sep='\t')
-            labels = df_l.values[:, -3]
+            labels = df_l.values[:, 3]
         # store the inputs and outputs
         self.fname = df_f.values[:, 0]
         self.lname = df_l.values[:, 0]
@@ -74,13 +74,13 @@ class CSVDataset(Dataset):
         # ensure input data is floats
         self.X = self.X.astype('float32')
         # self.X = self.X.reshape(self.X.shape[0],1,88)   #lld and funtional features with eGeMAPS--------------------------------------------------------------
-        self.X = self.X.reshape(self.X.shape[0],1,6373) #lld and funtional features with IS13_ComParE--------------------------------------------------------------
+        self.X = self.X.reshape(self.X.shape[0],6373) #lld and funtional features with IS13_ComParE--------------------------------------------------------------
         # self.X = self.X.reshape(self.X.shape[0],1,248,23)   #lld features
         # label encode target and ensure the values are floats
         if len(self.y):
             self.y = LabelEncoder().fit_transform(self.y)
-        self.y = self.y.astype('float32')          ##used for arousal and valence----------------------------------------------------------------
-        self.y = self.y.reshape((len(self.y), 1))   ##used for arousal and valence
+        # self.y = self.y.astype('float32')          ##used for arousal and valence----------------------------------------------------------------
+        # self.y = self.y.reshape((len(self.y), 1))   ##used for arousal and valence
 
     # number of rows in the dataset
     def __len__(self):
@@ -94,7 +94,7 @@ class CSVDataset(Dataset):
     def discard_irrel_cls(self, df_data, df_labels):
         for i, label in enumerate(df_labels.values):
             #print(i, label)
-            if label == 'undefined':            #'undefined' for arousal and valence
+            if label == 'other':            #'undefined' for arousal and valence
                 # self.X = delete(original_X, i, axis = 0)
                 # self.y = delete(original_y, i, axis = 0)
                 df_data = df_data.drop([i])
@@ -156,7 +156,7 @@ class MLP3(Module):
         kaiming_uniform_(self.hidden3.weight, nonlinearity='relu')
         self.act3 = ReLU()
         # fourth hidden layer and output
-        self.hidden4 = Linear(200, 1)
+        self.hidden4 = Linear(200, 12)
         xavier_uniform_(self.hidden4.weight)
         self.act4 = Softmax(dim=1)
         # self.act4 = Sigmoid()       ##just for BCELoss; when using CrosEntropyLoss, don't need the activation function of last layer
@@ -482,17 +482,17 @@ def main():
     print("The shape of test data and labels: {},{}" .format(test_data.X.shape, test_data.y.shape))
     # print(train_data_A.__getitem__(0))
 
-    # train = list(set(train_data_A.y))
+    train = list(set(train_data.y))
     # # train = train_data_A.y.unique()
-    # devel = list(set(devel_data.y))
-    # print('-------  Label Information  -------')
-    # print("The class label for train data: " + str(train))
-    # print("The class label for  test data: " + str(devel))
+    devel = list(set(devel_data.y))
+    print('-------  Label Information  -------')
+    print("The class label for train data: " + str(train))
+    print("The class label for  test data: " + str(devel))
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # define the network ------------------------------------------------------------------------------------------------------------------------------------
-    # model = CNN2D().to(device)
+    # model = CNN1D().to(device)
     model = MLP3(6373).to(device)    #should be 88
 
     # train the model
@@ -506,6 +506,8 @@ def main():
     print('UAR: %.3f' % recall)
     print('Accuracy: %.3f' % accs)
 
+    # if accs >= 0.39 :
+    #     torch.save(model, Data_Path + 'audio_Model.pt')
 
     # # train the optimal model using data belonging to the Subset A of the training data and the development data
     # list_of_datasets = []
@@ -549,18 +551,19 @@ if __name__ == "__main__":
 
 
 # Evaluating
-# Model     Epochs     Lr        Batch_size       acc              Task
+# Model     Epochs     Lr        Batch_size       acc (UAR)         Task
 # MLP3       360       001         32             27.1%           Emotion
 # MLP3       380       001         32             29.2%           Emotion   ------------------------
 # MLP3       390       001         32             25%             Emotion
 # MLP3       380       001         16             26%             Emotion
-# MLP3       300       0001        32             39.1%(38.8)     Emotion(IS13_ComParE) ---------------------
-# MLP3       350       0005        32             38.5%(42.5)     Emotion(IS13_ComParE)
+# MLP3       300       0001        32             39.1%(38.8%)     Emotion(IS13_ComParE) ---------------------
+# MLP3       300       0001        32             40.6%(43.1%)     Emotion(IS13_ComParE)
+# MLP3       350       0005        32             38.5%(42.5%)     Emotion(IS13_ComParE)
 # CNN1D       10       005         48             24.2%           Emotion  -----------------------------
 # CNN1D      100       0005        4              21.4%           Emotion
 # CNND       200       0001        32             32.3%(33.1)     Emotion(IS13_ComParE) -----------------
 # CNN2D      100       0001        32             32.8%(35.4)     Emotion(IS13_ComParE)  ----------------
-
+# CNN2D      100       0001        32             37.5%(40.6)     Emotion(IS13_ComParE)
 
 
 # MLP3       600       0005        32             80.3%           Arousal
