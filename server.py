@@ -63,8 +63,8 @@ class Server:
 
     def speech_label(self, prediction):
         # the dict here is just a sketch, we don't know the encoder of these labels, should be re-edit
-        Emo_labels_dict = {0: 'elation', 1: 'pleasure', 2: 'relief', 3: 'anxiety', 4: 'amusement', 5: 'hot anger', 6: 'cold anger',
-                      7: 'despair', 8: 'interest', 9: 'pride', 10: 'sadness', 11: 'panic fear'}
+        Emo_labels_dict = {0: 'amusement', 1: 'anxiety', 2: 'cold anger', 3: 'despair', 4: 'elation', 5: 'hot anger', 6: 'interest',
+                      7: 'panic fear', 8: 'pleasure', 9: 'pride', 10: 'relief', 11: 'sadness'}
         return Emo_labels_dict.get(prediction, None)
 
     def face_label(self, prediction):
